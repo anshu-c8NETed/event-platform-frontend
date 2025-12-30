@@ -1,14 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from 'axios';
-import { FaCalendarAlt, FaUsers, FaSpinner, FaTrophy, FaPlus, FaChartLine, FaFire } from 'react-icons/fa';
-import { motion, AnimatePresence } from 'framer-motion';
+import axios from '../utils/axios';
 
 const Dashboard = () => {
   const navigate = useNavigate();
-  const [dashboardData, setDashboardData] = useState(null);
+  const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
-  const [activeTab, setActiveTab] = useState('created');
+  const [error, setError] = useState(false);
 
   useEffect(() => {
     fetchDashboard();
@@ -16,301 +14,202 @@ const Dashboard = () => {
 
   const fetchDashboard = async () => {
     try {
-      const res = await axios.get(`${process.env.REACT_APP_API_URL}/api/users/dashboard`);
-      setDashboardData(res.data.data);
-    } catch (error) {
-      console.error('Failed to fetch dashboard');
+      setLoading(true);
+      setError(false);
+      const response = await axios.get('/api/users/dashboard');
+      setData(response.data.data);
+    } catch (err) {
+      console.error('Dashboard error:', err);
+      setError(true);
     } finally {
       setLoading(false);
     }
   };
 
+  // Loading state
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        <motion.div
-          animate={{ rotate: 360 }}
-          transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-        >
-          <FaSpinner className="text-6xl text-purple-600" />
-        </motion.div>
-      </div>
-    );
-  }
-
-  // Add null check for dashboardData
-  if (!dashboardData || !dashboardData.stats) {
-    return (
-      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+      <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
-          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
-            Unable to load dashboard
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400 mb-6">
-            There was an error loading your dashboard data.
-          </p>
-          <button
-            onClick={fetchDashboard}
-            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
-          >
-            Retry
-          </button>
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading dashboard...</p>
         </div>
       </div>
     );
   }
 
-  const stats = [
-    {
-      icon: <FaCalendarAlt />,
-      label: 'Events Created',
-      value: dashboardData.stats.totalEventsCreated,
-      color: 'from-blue-500 to-cyan-500',
-      bgColor: 'from-blue-50 to-cyan-50 dark:from-blue-900/20 dark:to-cyan-900/20'
-    },
-    {
-      icon: <FaUsers />,
-      label: 'Events Attending',
-      value: dashboardData.stats.totalEventsAttending,
-      color: 'from-green-500 to-emerald-500',
-      bgColor: 'from-green-50 to-emerald-50 dark:from-green-900/20 dark:to-emerald-900/20'
-    },
-    {
-      icon: <FaFire />,
-      label: 'Upcoming Events',
-      value: dashboardData.stats.upcomingEvents,
-      color: 'from-orange-500 to-red-500',
-      bgColor: 'from-orange-50 to-red-50 dark:from-orange-900/20 dark:to-red-900/20'
-    },
-    {
-      icon: <FaTrophy />,
-      label: 'Total Attendees',
-      value: dashboardData.stats.totalAttendees || 0,
-      color: 'from-purple-500 to-pink-500',
-      bgColor: 'from-purple-50 to-pink-50 dark:from-purple-900/20 dark:to-pink-900/20'
-    }
-  ];
+  // Error state
+  if (error || !data) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center max-w-md">
+          <div className="text-6xl mb-4">⚠️</div>
+          <h2 className="text-2xl font-bold mb-2">Unable to Load Dashboard</h2>
+          <p className="text-gray-600 mb-6">
+            Please check if you're logged in and try again.
+          </p>
+          <div className="flex gap-3 justify-center">
+            <button
+              onClick={fetchDashboard}
+              className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+            >
+              Retry
+            </button>
+            <button
+              onClick={() => navigate('/login')}
+              className="px-6 py-2 bg-gray-200 text-gray-700 rounded-lg hover:bg-gray-300"
+            >
+              Login
+            </button>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  const stats = data.stats || {};
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-50 to-purple-50 dark:from-gray-900 dark:to-gray-800 py-12">
-      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-gray-50 py-8">
+      <div className="max-w-7xl mx-auto px-4">
         {/* Header */}
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="flex flex-col md:flex-row md:items-center md:justify-between mb-12"
-        >
+        <div className="flex justify-between items-center mb-8">
           <div>
-            <h1 className="text-5xl font-bold bg-gradient-to-r from-purple-600 to-pink-600 bg-clip-text text-transparent mb-2">
-              Dashboard
-            </h1>
-            <p className="text-gray-600 dark:text-gray-400 text-lg">
-              Welcome back! Here's what's happening
-            </p>
+            <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
+            <p className="text-gray-600 mt-1">Welcome back!</p>
           </div>
-
-          <motion.button
-            whileHover={{ scale: 1.05 }}
-            whileTap={{ scale: 0.95 }}
-            onClick={() => navigate('/create-event')}
-            className="mt-4 md:mt-0 inline-flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all"
+          <Link
+            to="/create-event"
+            className="px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
           >
-            <FaPlus />
-            Create Event
-          </motion.button>
-        </motion.div>
-
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
-          {stats.map((stat, index) => (
-            <motion.div
-              key={index}
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: index * 0.1 }}
-              whileHover={{ y: -5, scale: 1.02 }}
-              className={`relative overflow-hidden bg-gradient-to-br ${stat.bgColor} rounded-3xl p-6 shadow-xl cursor-pointer group`}
-            >
-              <div className={`inline-flex items-center justify-center w-14 h-14 rounded-2xl bg-gradient-to-br ${stat.color} mb-4 shadow-lg group-hover:scale-110 transition-transform`}>
-                <span className="text-white text-2xl">{stat.icon}</span>
-              </div>
-
-              <p className="text-gray-600 dark:text-gray-400 text-sm mb-2">
-                {stat.label}
-              </p>
-
-              <p className="text-4xl font-bold text-gray-900 dark:text-white mb-2">
-                {stat.value}
-              </p>
-
-              <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 dark:bg-black/10 rounded-full -mr-16 -mt-16 group-hover:scale-150 transition-transform duration-500" />
-            </motion.div>
-          ))}
+            + Create Event
+          </Link>
         </div>
 
-        {/* Tabs */}
-        <motion.div
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ delay: 0.4 }}
-          className="flex gap-4 mb-8 bg-white/50 dark:bg-gray-800/50 backdrop-blur-xl rounded-2xl p-2"
-        >
-          <button
-            onClick={() => setActiveTab('created')}
-            className={`flex-1 px-6 py-4 rounded-xl font-semibold transition-all ${
-              activeTab === 'created'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            My Events ({dashboardData?.createdEvents?.length || 0})
-          </button>
+        {/* Stats Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-8">
+          <StatCard
+            title="Events Created"
+            value={stats.totalEventsCreated || 0}
+            color="bg-blue-500"
+          />
+          <StatCard
+            title="Events Attending"
+            value={stats.totalEventsAttending || 0}
+            color="bg-green-500"
+          />
+          <StatCard
+            title="Upcoming Events"
+            value={stats.upcomingEvents || 0}
+            color="bg-orange-500"
+          />
+          <StatCard
+            title="Total Attendees"
+            value={stats.totalAttendees || 0}
+            color="bg-purple-500"
+          />
+        </div>
 
-          <button
-            onClick={() => setActiveTab('attending')}
-            className={`flex-1 px-6 py-4 rounded-xl font-semibold transition-all ${
-              activeTab === 'attending'
-                ? 'bg-gradient-to-r from-purple-600 to-pink-600 text-white shadow-lg'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
-            }`}
-          >
-            Attending ({dashboardData?.attendingEvents?.length || 0})
-          </button>
-        </motion.div>
+        {/* Events Sections */}
+        <div className="space-y-8">
+          {/* My Events */}
+          <Section
+            title="My Events"
+            count={data.createdEvents?.length || 0}
+            events={data.createdEvents || []}
+            emptyText="You haven't created any events yet"
+            buttonText="Create Event"
+            buttonLink="/create-event"
+          />
 
-        {/* Events Grid */}
-        <AnimatePresence mode="wait">
-          <motion.div
-            key={activeTab}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0, y: -20 }}
-            transition={{ duration: 0.3 }}
-            className="grid md:grid-cols-2 lg:grid-cols-3 gap-8"
-          >
-            {activeTab === 'created' ? (
-              dashboardData.createdEvents.length > 0 ? (
-                dashboardData.createdEvents.map((event, index) => (
-                  <EventCard key={event._id} event={event} index={index} />
-                ))
-              ) : (
-                <EmptyState
-                  icon={<FaCalendarAlt className="text-6xl text-purple-600" />}
-                  title="No events created yet"
-                  description="Start by creating your first event and invite attendees"
-                  buttonText="Create Your First Event"
-                  buttonLink="/create-event"
-                />
-              )
-            ) : (
-              dashboardData.attendingEvents.length > 0 ? (
-                dashboardData.attendingEvents.map((event, index) => (
-                  <EventCard key={event._id} event={event} index={index} />
-                ))
-              ) : (
-                <EmptyState
-                  icon={<FaUsers className="text-6xl text-purple-600" />}
-                  title="Not attending any events"
-                  description="Discover amazing events happening around you"
-                  buttonText="Browse Events"
-                  buttonLink="/events"
-                />
-              )
-            )}
-          </motion.div>
-        </AnimatePresence>
+          {/* Attending Events */}
+          <Section
+            title="Events I'm Attending"
+            count={data.attendingEvents?.length || 0}
+            events={data.attendingEvents || []}
+            emptyText="You're not attending any events yet"
+            buttonText="Browse Events"
+            buttonLink="/events"
+          />
+        </div>
       </div>
     </div>
   );
 };
 
-const EventCard = ({ event, index }) => {
+// Stat Card Component
+const StatCard = ({ title, value, color }) => (
+  <div className="bg-white rounded-lg p-6 shadow">
+    <div className={`${color} w-12 h-12 rounded-lg flex items-center justify-center mb-4`}>
+      <span className="text-white text-xl font-bold">{value}</span>
+    </div>
+    <p className="text-gray-600 text-sm">{title}</p>
+  </div>
+);
+
+// Section Component
+const Section = ({ title, count, events, emptyText, buttonText, buttonLink }) => (
+  <div className="bg-white rounded-lg shadow p-6">
+    <div className="flex justify-between items-center mb-4">
+      <h2 className="text-xl font-bold text-gray-900">
+        {title} ({count})
+      </h2>
+    </div>
+
+    {events.length > 0 ? (
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {events.map((event) => (
+          <EventCard key={event._id} event={event} />
+        ))}
+      </div>
+    ) : (
+      <div className="text-center py-12">
+        <p className="text-gray-500 mb-4">{emptyText}</p>
+        <Link
+          to={buttonLink}
+          className="inline-block px-6 py-2 bg-purple-600 text-white rounded-lg hover:bg-purple-700"
+        >
+          {buttonText}
+        </Link>
+      </div>
+    )}
+  </div>
+);
+
+// Event Card Component
+const EventCard = ({ event }) => {
   const navigate = useNavigate();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 30 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.1 }}
-      whileHover={{ y: -8 }}
+    <div
       onClick={() => navigate(`/events/${event._id}`)}
-      className="group cursor-pointer"
+      className="border rounded-lg overflow-hidden cursor-pointer hover:shadow-lg transition"
     >
-      <div className="bg-white/80 dark:bg-gray-800/80 backdrop-blur-xl rounded-3xl overflow-hidden shadow-xl hover:shadow-2xl transition-all duration-300 border border-gray-200/20 dark:border-gray-700/20">
-        <div className="relative h-48 overflow-hidden">
-          <img
-            src={event.image}
-            alt={event.title}
-            className="w-full h-full object-cover transform group-hover:scale-110 transition-transform duration-500"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent" />
-
-          <div className="absolute top-4 right-4 px-3 py-1 bg-white/90 dark:bg-gray-800/90 backdrop-blur-sm rounded-full text-sm font-semibold text-purple-600 shadow-lg">
+      <img
+        src={event.image}
+        alt={event.title}
+        className="w-full h-40 object-cover"
+      />
+      <div className="p-4">
+        <h3 className="font-bold text-gray-900 mb-2 truncate">{event.title}</h3>
+        <p className="text-sm text-gray-600 mb-2">
+          {new Date(event.date).toLocaleDateString('en-US', {
+            month: 'short',
+            day: 'numeric',
+            year: 'numeric'
+          })}
+        </p>
+        <div className="flex items-center gap-2">
+          <span className="text-xs bg-purple-100 text-purple-600 px-2 py-1 rounded">
             {event.category}
-          </div>
-
-          <div className="absolute bottom-4 left-4 right-4 flex items-center justify-between text-white text-sm">
-            <div className="flex items-center gap-1 backdrop-blur-sm bg-black/30 px-2 py-1 rounded-lg">
-              <FaUsers />
-              <span>{event.currentAttendees}/{event.capacity}</span>
-            </div>
-          </div>
-        </div>
-
-        <div className="p-6">
-          <h3 className="text-xl font-bold text-gray-900 dark:text-white mb-2 line-clamp-2 group-hover:text-purple-600 transition-colors">
-            {event.title}
-          </h3>
-
-          <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400 mb-4">
-            <FaCalendarAlt className="text-purple-600" />
-            <span>{new Date(event.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</span>
-          </div>
-
-          <div className="flex items-center gap-3 pt-4 border-t border-gray-200 dark:border-gray-700">
-            <img src={event.organizer?.avatar} alt="" className="w-10 h-10 rounded-full" />
-            <div>
-              <p className="text-xs text-gray-500 dark:text-gray-400">Organized by</p>
-              <p className="text-sm font-semibold text-gray-700 dark:text-gray-300">{event.organizer?.name}</p>
-            </div>
-          </div>
+          </span>
+          <span className="text-xs text-gray-500">
+            {event.currentAttendees}/{event.capacity}
+          </span>
         </div>
       </div>
-    </motion.div>
-  );
-};
-
-const EmptyState = ({ icon, title, description, buttonText, buttonLink }) => {
-  return (
-    <div className="col-span-full text-center py-20">
-      <motion.div
-        initial={{ scale: 0 }}
-        animate={{ scale: 1 }}
-        transition={{ type: "spring", stiffness: 200 }}
-        className="inline-flex items-center justify-center w-24 h-24 bg-gradient-to-br from-purple-100 to-pink-100 dark:from-purple-900 dark:to-pink-900 rounded-full mb-6"
-      >
-        {icon}
-      </motion.div>
-
-      <h3 className="text-2xl font-bold text-gray-900 dark:text-white mb-2">
-        {title}
-      </h3>
-
-      <p className="text-gray-600 dark:text-gray-400 mb-8 max-w-md mx-auto">
-        {description}
-      </p>
-
-      <Link
-        to={buttonLink}
-        className="inline-flex items-center gap-2 px-8 py-4 bg-gradient-to-r from-purple-600 to-pink-600 hover:from-purple-700 hover:to-pink-700 text-white rounded-xl font-semibold shadow-lg transition-all"
-      >
-        <FaPlus />
-        {buttonText}
-      </Link>
     </div>
   );
 };
 
 export default Dashboard;
-
-
