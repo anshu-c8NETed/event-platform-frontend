@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import axios from '../utils/axios';
+import axios from 'axios';
 import { FaCalendarAlt, FaUsers, FaSpinner, FaTrophy, FaPlus, FaChartLine, FaFire } from 'react-icons/fa';
 import { motion, AnimatePresence } from 'framer-motion';
 
@@ -312,4 +312,5 @@ const EmptyState = ({ icon, title, description, buttonText, buttonLink }) => {
 };
 
 export default Dashboard;
+
 
