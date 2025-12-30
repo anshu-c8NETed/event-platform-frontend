@@ -38,6 +38,28 @@ const Dashboard = () => {
     );
   }
 
+  // Add null check for dashboardData
+  if (!dashboardData || !dashboardData.stats) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-gray-50 to-purple-50 dark:from-gray-900 dark:to-gray-800">
+        <div className="text-center">
+          <h2 className="text-2xl font-bold text-gray-900 dark:text-white mb-4">
+            Unable to load dashboard
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
+            There was an error loading your dashboard data.
+          </p>
+          <button
+            onClick={fetchDashboard}
+            className="px-6 py-3 bg-gradient-to-r from-purple-600 to-pink-600 text-white rounded-xl font-semibold hover:from-purple-700 hover:to-pink-700 transition-all"
+          >
+            Retry
+          </button>
+        </div>
+      </div>
+    );
+  }
+
   const stats = [
     {
       icon: <FaCalendarAlt />,
@@ -141,7 +163,7 @@ const Dashboard = () => {
                 : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
-            My Events ({dashboardData.createdEvents.length})
+            My Events ({dashboardData?.createdEvents?.length || 0})
           </button>
 
           <button
@@ -152,7 +174,7 @@ const Dashboard = () => {
                 : 'text-gray-700 dark:text-gray-300 hover:bg-white/50 dark:hover:bg-gray-700/50'
             }`}
           >
-            Attending ({dashboardData.attendingEvents.length})
+            Attending ({dashboardData?.attendingEvents?.length || 0})
           </button>
         </motion.div>
 
